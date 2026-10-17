@@ -22,7 +22,7 @@ spec:
       automountServiceAccountToken: false
       initContainers:
         - name: validate-config
-          image: python:3.12-slim
+          image: ghcr.io/amit199222/devops-sre:eb6acf4e7343bfade4e373981c70be6ff5a79f9f
           command:
             - python
             - -c
