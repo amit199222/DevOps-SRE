@@ -1,0 +1,28 @@
+[1mdiff --git a/k8s/deployment.yaml b/k8s/deployment.yaml[m
+[1mindex 8ba062a..f5703b5 100644[m
+[1m--- a/k8s/deployment.yaml[m
+[1m+++ b/k8s/deployment.yaml[m
+[36m@@ -75,6 +75,7 @@[m [mspec:[m
+             periodSeconds: 10[m
+           securityContext:[m
+             runAsNonRoot: true[m
+[32m+[m[32m            runAsUser: 65532[m
+             allowPrivilegeEscalation: false[m
+             readOnlyRootFilesystem: true[m
+             capabilities:[m
+[36m@@ -173,6 +174,7 @@[m [mspec:[m
+             periodSeconds: 10[m
+           securityContext:[m
+             runAsNonRoot: true[m
+[32m+[m[32m            runAsUser: 65532[m
+             allowPrivilegeEscalation: false[m
+             readOnlyRootFilesystem: true[m
+             capabilities:[m
+[36m@@ -271,6 +273,7 @@[m [mspec:[m
+             periodSeconds: 10[m
+           securityContext:[m
+             runAsNonRoot: true[m
+[32m+[m[32m            runAsUser: 65532[m
+             allowPrivilegeEscalation: false[m
+             readOnlyRootFilesystem: true[m
+             capabilities:[m

@@ -75,6 +75,7 @@ spec:
             periodSeconds: 10
           securityContext:
             runAsNonRoot: true
+            runAsUser: 65532
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:
@@ -173,6 +174,7 @@ spec:
             periodSeconds: 10
           securityContext:
             runAsNonRoot: true
+            runAsUser: 65532
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:
@@ -271,6 +273,7 @@ spec:
             periodSeconds: 10
           securityContext:
             runAsNonRoot: true
+            runAsUser: 65532
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:
