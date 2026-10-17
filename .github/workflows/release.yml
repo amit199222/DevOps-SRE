@@ -1,0 +1,106 @@
+
+name: Release and Update GitOps Manifest
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write
+
+jobs:
+  release:
+    if: >-
+        github.event.pull_request.merged == true &&
+        github.event.pull_request.user.login != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main after merge
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Define image name and tag
+        id: image
+        shell: bash
+        run: |
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"
+          TAG="${GITHUB_SHA}"
+          echo "name=$IMAGE" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Build release image
+        run: |
+          docker build --pull \
+            -t "${{ steps.image.outputs.name }}:${{ steps.image.outputs.tag }}" .
+
+      - name: Scan release image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ steps.image.outputs.name }}:${{ steps.image.outputs.tag }}
+          format: table
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          scanners: vuln
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push release image
+        run: |
+          docker push \
+            "${{ steps.image.outputs.name }}:${{ steps.image.outputs.tag }}"
+
+      - name: Update Kubernetes image tag
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}:${{ steps.image.outputs.tag }}
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path("k8s/deployment.yaml")
+          content = path.read_text()
+
+          pattern = r"(?m)^(\s*image:\s*).+$"
+          updated, count = re.subn(
+              pattern,
+              lambda match: match.group(1) + os.environ["IMAGE"],
+              content,
+              count=1,
+          )
+
+          if count != 1:
+              raise SystemExit("Expected exactly one image field")
+
+          path.write_text(updated)
+          PY
+
+      
+      - name: Create GitOps manifest update PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: automation/update-image-${{ steps.image.outputs.tag }}
+          delete-branch: true
+          commit-message: "chore(gitops): update memory service image"
+          title: "chore(gitops): update memory service image"
+          body: |
+            Automated image update after a successful release build
+            and container vulnerability scan.
+          add-paths: k8s/deployment.yaml
+
