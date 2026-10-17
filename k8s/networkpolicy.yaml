@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: memory-leak-default-deny
+  namespace: devsecops
+spec:
+  podSelector:
+    matchLabels:
+      app: memory-leak-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: devsecops
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress: []
