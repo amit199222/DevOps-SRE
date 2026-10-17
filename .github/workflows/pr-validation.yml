@@ -58,4 +58,3 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"
           scanners: vuln
-          trivyignores: .trivyignore
