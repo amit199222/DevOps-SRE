@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: memory-leak-service
+  namespace: devsecops
+spec:
+  type: ClusterIP
+  selector:
+    app: memory-leak-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

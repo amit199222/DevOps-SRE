@@ -1,50 +1,293 @@
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: memory-leak-service
+  name: memory-leak-service-v1
+  namespace: devsecops
   labels:
     app: memory-leak-service
+    version: v1
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: memory-leak-service
+      version: v1
   template:
     metadata:
       labels:
         app: memory-leak-service
+        version: v1
     spec:
+      serviceAccountName: memory-leak-service
+      automountServiceAccountToken: false
+      initContainers:
+        - name: validate-config
+          image: python:3.12-slim
+          command:
+            - python
+            - -c
+            - "from pathlib import Path; p=Path('/config/APP_ENV'); assert p.exists() and p.read_text().strip(); print('Configuration validated')"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          volumeMounts:
+            - name: app-config
+              mountPath: /config
+              readOnly: true
       containers:
-        - name: memory-leak-service
-          image: ghcr.io/OWNER/REPOSITORY:latest
+        - name: app
+          image: ghcr.io/amit199222/devops-sre:bootstrap-v1
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 8080
           resources:
             requests:
-              memory: "128Mi"
-              cpu: "100m"
+              cpu: 100m
+              memory: 128Mi
             limits:
-              memory: "1200Mi"
-              cpu: "500m"
+              cpu: 500m
+              memory: 400Mi
           readinessProbe:
             httpGet:
               path: /healthcheck
               port: http
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            initialDelaySeconds: 3
+            periodSeconds: 5
           livenessProbe:
             httpGet:
               path: /healthcheck
               port: http
             initialDelaySeconds: 10
-            periodSeconds: 15
+            periodSeconds: 10
           securityContext:
+            runAsNonRoot: true
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
-            runAsNonRoot: true
-            readOnlyRootFilesystem: true
             seccompProfile:
               type: RuntimeDefault
+          volumeMounts:
+            - name: app-config
+              mountPath: /etc/memory-leak-config
+              readOnly: true
+            - name: runtime-secret
+              mountPath: /var/run/memory-leak-secrets
+              readOnly: true
+      volumes:
+        - name: app-config
+          configMap:
+            name: memory-leak-config
+        - name: runtime-secret
+          secret:
+            secretName: memory-leak-runtime
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memory-leak-service-v2
+  namespace: devsecops
+  labels:
+    app: memory-leak-service
+    version: v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: memory-leak-service
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: memory-leak-service
+        version: v2
+    spec:
+      serviceAccountName: memory-leak-service
+      automountServiceAccountToken: false
+      initContainers:
+        - name: validate-config
+          image: python:3.12-slim
+          command:
+            - python
+            - -c
+            - "from pathlib import Path; p=Path('/config/APP_ENV'); assert p.exists() and p.read_text().strip(); print('Configuration validated')"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          volumeMounts:
+            - name: app-config
+              mountPath: /config
+              readOnly: true
+      containers:
+        - name: app
+          image: ghcr.io/amit199222/devops-sre:bootstrap-v2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 400Mi
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: app-config
+              mountPath: /etc/memory-leak-config
+              readOnly: true
+            - name: runtime-secret
+              mountPath: /var/run/memory-leak-secrets
+              readOnly: true
+      volumes:
+        - name: app-config
+          configMap:
+            name: memory-leak-config
+        - name: runtime-secret
+          secret:
+            secretName: memory-leak-runtime
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memory-leak-service-v3
+  namespace: devsecops
+  labels:
+    app: memory-leak-service
+    version: v3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: memory-leak-service
+      version: v3
+  template:
+    metadata:
+      labels:
+        app: memory-leak-service
+        version: v3
+    spec:
+      serviceAccountName: memory-leak-service
+      automountServiceAccountToken: false
+      initContainers:
+        - name: validate-config
+          image: python:3.12-slim
+          command:
+            - python
+            - -c
+            - "from pathlib import Path; p=Path('/config/APP_ENV'); assert p.exists() and p.read_text().strip(); print('Configuration validated')"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          volumeMounts:
+            - name: app-config
+              mountPath: /config
+              readOnly: true
+      containers:
+        - name: app
+          image: ghcr.io/amit199222/devops-sre:bootstrap-v3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 400Mi
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: app-config
+              mountPath: /etc/memory-leak-config
+              readOnly: true
+            - name: runtime-secret
+              mountPath: /var/run/memory-leak-secrets
+              readOnly: true
+      volumes:
+        - name: app-config
+          configMap:
+            name: memory-leak-config
+        - name: runtime-secret
+          secret:
+            secretName: memory-leak-runtime

@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: devops-sre-assessment
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/amit199222/DevOps-SRE.git
+    targetRevision: feature/my-work
+    path: k8s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: devsecops
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
