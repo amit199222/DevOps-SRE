@@ -5,19 +5,15 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
-
-# Create a non-root user
 RUN useradd --system --uid 65532 --no-create-home appuser
-
-# Copy only the application code
-#COPY --chown=appuser:appgroup app/ ./app/
 COPY --chown=65532:65532 app/ ./app/
 
-# Run without root privileges
-#USER appuser
+
 USER 65532
 
-# Health-check HTTP server listens on port 8080
+
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthcheck', timeout=3)" || exit 1
 
 CMD ["python", "-u", "app/app.py"]

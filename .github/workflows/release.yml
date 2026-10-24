@@ -64,31 +64,36 @@ jobs:
           docker push \
             "${{ steps.image.outputs.name }}:${{ steps.image.outputs.tag }}"
 
-      - name: Update Kubernetes image tag
+      - name: Update Kubernetes image tags
         env:
-          IMAGE: ${{ steps.image.outputs.name }}:${{ steps.image.outputs.tag }}
+          IMAGE_TAG: ${{ steps.meta.outputs.version }}
         run: |
-          python - <<'PY'
-          import os
-          import re
-          from pathlib import Path
+          set -euo pipefail
 
-          path = Path("k8s/deployment.yaml")
-          content = path.read_text()
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY}:${IMAGE_TAG}"
 
-          pattern = r"(?m)^(\s*image:\s*).+$"
-          updated, count = re.subn(
-              pattern,
-              lambda match: match.group(1) + os.environ["IMAGE"],
-              content,
-              count=1,
-          )
+          # Install yq
+          YQ_VERSION="v4.45.1"
+          curl -fsSL \
+            "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" \
+            -o /usr/local/bin/yq
+          chmod +x /usr/local/bin/yq
 
-          if count != 1:
-              raise SystemExit("Expected exactly one image field")
+          # Update only the app container in all three Deployments
+          for version in v1 v2 v3; do
+            yq -i \
+              "(.[] | select(.kind == \"Deployment\" and .metadata.name == \"memory-leak-service-${version}\") | .spec.template.spec.containers[] | select(.name == \"app\") | .image) = \"${IMAGE}-${version}\"" \
+              k8s/deployment.yaml
+          done
 
-          path.write_text(updated)
-          PY
+          # Verify the resulting image tags
+          yq -r '
+            select(.kind == "Deployment") |
+            .metadata.name as $deployment |
+            .spec.template.spec.containers[] |
+            select(.name == "app") |
+            "\($deployment): \(.image)"
+          ' k8s/deployment.yaml
 
       
       - name: Create GitOps manifest update PR
