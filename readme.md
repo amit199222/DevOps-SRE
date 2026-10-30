@@ -1,3 +1,5 @@
+## Task 3 screenshots are in https://github.com/amit199222/DevOps-SRE/tree/main/task3_screenshots (task3_screenshots directory in repository root)
+
 # DevSecOps & Site Reliability Engineering (SRE) Assessment
 
 ## Overview
